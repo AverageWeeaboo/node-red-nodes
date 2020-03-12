@@ -48,8 +48,15 @@ module.exports = function(RED) {
             node.pool.getConnection(function(err, connection) {
                 node.connecting = false;
                 if (err) {
-                    node.emit("state",err.code);
-                    node.error(err);
+                    if (err.code !== 'EAI_AGAIN')
+                    {
+                        node.emit("state",err.code);
+                        node.error(err);
+                    }
+                    else
+                    {
+                        node.emit("state",err.code);
+                    }
                     node.tick = setTimeout(doConnect, reconnect);
                 }
                 else {
@@ -65,6 +72,9 @@ module.exports = function(RED) {
                         }
                         else if (err.code === 'ECONNRESET') {
                             doConnect(); // silently reconnect...
+                        }
+                        else if(err.code ==='EAI_AGAIN'){
+                            doConnect();//Silently Reconnect
                         }
                         else {
                             node.error(err);
@@ -143,6 +153,7 @@ module.exports = function(RED) {
                 }
                 else {
                     node.error("Database not connected",msg);
+                    node.error("Database not connected");
                     status = {fill:"red",shape:"ring",text:"not yet connected"};
                 }
                 if (!busy) {
